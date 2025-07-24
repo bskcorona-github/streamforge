@@ -1,0 +1,219 @@
+syntax = "proto3";
+
+package streamforge.v1;
+
+option go_package = "github.com/bskcorona-github/streamforge/packages/proto/streamforge/v1;v1";
+option java_multiple_files = true;
+option java_package = "com.streamforge.v1";
+option java_outer_classname = "CommonProto";
+option csharp_namespace = "StreamForge.V1";
+option objc_class_prefix = "SF";
+option php_namespace = "StreamForge\\V1";
+option ruby_package = "StreamForge::V1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+// 共通のメトリクス型
+enum MetricType {
+  METRIC_TYPE_UNSPECIFIED = 0;
+  METRIC_TYPE_COUNTER = 1;
+  METRIC_TYPE_GAUGE = 2;
+  METRIC_TYPE_HISTOGRAM = 3;
+  METRIC_TYPE_SUMMARY = 4;
+}
+
+// ログレベル
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+  LOG_LEVEL_TRACE = 1;
+  LOG_LEVEL_DEBUG = 2;
+  LOG_LEVEL_INFO = 3;
+  LOG_LEVEL_WARN = 4;
+  LOG_LEVEL_ERROR = 5;
+  LOG_LEVEL_FATAL = 6;
+}
+
+// スパン種別
+enum SpanKind {
+  SPAN_KIND_UNSPECIFIED = 0;
+  SPAN_KIND_INTERNAL = 1;
+  SPAN_KIND_SERVER = 2;
+  SPAN_KIND_CLIENT = 3;
+  SPAN_KIND_PRODUCER = 4;
+  SPAN_KIND_CONSUMER = 5;
+}
+
+// 異常検知の種類
+enum AnomalyType {
+  ANOMALY_TYPE_UNSPECIFIED = 0;
+  ANOMALY_TYPE_SPIKE = 1;
+  ANOMALY_TYPE_DROP = 2;
+  ANOMALY_TYPE_TREND = 3;
+  ANOMALY_TYPE_SEASONAL = 4;
+  ANOMALY_TYPE_PATTERN = 5;
+}
+
+// アラートの重要度
+enum AlertSeverity {
+  ALERT_SEVERITY_UNSPECIFIED = 0;
+  ALERT_SEVERITY_LOW = 1;
+  ALERT_SEVERITY_MEDIUM = 2;
+  ALERT_SEVERITY_HIGH = 3;
+  ALERT_SEVERITY_CRITICAL = 4;
+}
+
+// リソース情報
+message Resource {
+  string service_name = 1;
+  string service_version = 2;
+  string service_namespace = 3;
+  string service_instance_id = 4;
+  map<string, string> attributes = 5;
+  map<string, string> labels = 6;
+}
+
+// メトリクスデータ
+message Metric {
+  string name = 1;
+  string description = 2;
+  string unit = 3;
+  MetricType type = 4;
+  map<string, string> labels = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  oneof value {
+    double gauge_value = 7;
+    double counter_value = 8;
+    HistogramData histogram_value = 9;
+    SummaryData summary_value = 10;
+  }
+}
+
+// ヒストグラムデータ
+message HistogramData {
+  repeated double bounds = 1;
+  repeated uint64 counts = 2;
+  double sum = 3;
+  uint64 count = 4;
+}
+
+// サマリーデータ
+message SummaryData {
+  repeated Quantile quantiles = 1;
+  double sum = 2;
+  uint64 count = 3;
+}
+
+// 分位数
+message Quantile {
+  double quantile = 1;
+  double value = 2;
+}
+
+// ログデータ
+message Log {
+  string message = 1;
+  LogLevel level = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  map<string, string> attributes = 4;
+  map<string, string> labels = 5;
+  string trace_id = 6;
+  string span_id = 7;
+  Resource resource = 8;
+}
+
+// トレーススパン
+message Span {
+  string trace_id = 1;
+  string span_id = 2;
+  string parent_span_id = 3;
+  string name = 4;
+  SpanKind kind = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+  google.protobuf.Duration duration = 8;
+  map<string, string> attributes = 9;
+  repeated Log logs = 10;
+  repeated SpanEvent events = 11;
+  repeated SpanLink links = 12;
+  Resource resource = 13;
+  string status_message = 14;
+  uint32 status_code = 15;
+}
+
+// スパンイベント
+message SpanEvent {
+  string name = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  map<string, string> attributes = 3;
+}
+
+// スパンリンク
+message SpanLink {
+  string trace_id = 1;
+  string span_id = 2;
+  map<string, string> attributes = 3;
+}
+
+// 異常検知結果
+message Anomaly {
+  string id = 1;
+  string metric_name = 2;
+  AnomalyType type = 3;
+  AlertSeverity severity = 4;
+  double score = 5;
+  google.protobuf.Timestamp detected_at = 6;
+  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp end_time = 8;
+  map<string, string> labels = 9;
+  string description = 10;
+  repeated string recommendations = 11;
+}
+
+// アラート
+message Alert {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  AlertSeverity severity = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp resolved_at = 6;
+  string status = 7;
+  map<string, string> labels = 8;
+  repeated Anomaly anomalies = 9;
+  repeated string notifications = 10;
+}
+
+// ページネーション情報
+message Pagination {
+  int32 page = 1;
+  int32 page_size = 2;
+  int64 total = 3;
+  int32 total_pages = 4;
+}
+
+// 時系列データポイント
+message TimeSeriesPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  double value = 2;
+  map<string, string> labels = 3;
+}
+
+// 時系列データ
+message TimeSeries {
+  string name = 1;
+  string description = 2;
+  string unit = 3;
+  MetricType type = 4;
+  repeated TimeSeriesPoint points = 5;
+  map<string, string> labels = 6;
+}
+
+// ヘルスチェック結果
+message HealthCheck {
+  string service = 1;
+  string status = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string message = 4;
+  map<string, string> details = 5;
+} 

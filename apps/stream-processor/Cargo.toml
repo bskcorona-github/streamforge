@@ -1,0 +1,86 @@
+[package]
+name = "stream-processor"
+version = "0.1.0"
+edition = "2021"
+authors = ["StreamForge Team <team@streamforge.dev>"]
+description = "Real-time stream processing engine for StreamForge"
+license = "Apache-2.0"
+repository = "https://github.com/bskcorona-github/streamforge"
+keywords = ["stream-processing", "observability", "real-time", "kafka"]
+categories = ["data-processing", "observability"]
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+tokio-stream = "0.1"
+
+# Stream processing
+futures = "0.3"
+async-stream = "0.3"
+
+# Kafka
+rdkafka = { version = "0.36", features = ["cmake-build"] }
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Protocol Buffers
+prost = "0.12"
+tonic = "0.10"
+
+# Configuration
+clap = { version = "4.4", features = ["derive"] }
+config = "0.14"
+dotenv = "0.15"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-opentelemetry = "0.21"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# UUID generation
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Metrics and monitoring
+prometheus = "0.13"
+prometheus-client = "0.22"
+opentelemetry = { version = "0.21", features = ["rt-tokio"] }
+opentelemetry-jaeger = "0.20"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json"] }
+
+# Utilities
+rand = "0.8"
+base64 = "0.21"
+hex = "0.4"
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.12"
+criterion = "0.5"
+
+[[bench]]
+name = "stream_processing"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true 

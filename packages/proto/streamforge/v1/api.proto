@@ -1,0 +1,404 @@
+syntax = "proto3";
+
+package streamforge.v1;
+
+option go_package = "github.com/bskcorona-github/streamforge/packages/proto/streamforge/v1;v1";
+option java_multiple_files = true;
+option java_package = "com.streamforge.v1";
+option java_outer_classname = "ApiProto";
+option csharp_namespace = "StreamForge.V1";
+option objc_class_prefix = "SF";
+option php_namespace = "StreamForge\\V1";
+option ruby_package = "StreamForge::V1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "streamforge/v1/common.proto";
+
+// API Gateway サービス
+service ApiService {
+  // メトリクス関連
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  rpc GetMetric(GetMetricRequest) returns (GetMetricResponse);
+  rpc GetTimeSeries(GetTimeSeriesRequest) returns (GetTimeSeriesResponse);
+  
+  // ログ関連
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse);
+  rpc SearchLogs(SearchLogsRequest) returns (SearchLogsResponse);
+  
+  // トレース関連
+  rpc GetTraces(GetTracesRequest) returns (GetTracesResponse);
+  rpc GetTrace(GetTraceRequest) returns (GetTraceResponse);
+  rpc GetTraceGraph(GetTraceGraphRequest) returns (GetTraceGraphResponse);
+  
+  // 異常検知関連
+  rpc GetAnomalies(GetAnomaliesRequest) returns (GetAnomaliesResponse);
+  rpc GetAnomaly(GetAnomalyRequest) returns (GetAnomalyResponse);
+  
+  // アラート関連
+  rpc GetAlerts(GetAlertsRequest) returns (GetAlertsResponse);
+  rpc GetAlert(GetAlertRequest) returns (GetAlertResponse);
+  rpc CreateAlert(CreateAlertRequest) returns (CreateAlertResponse);
+  rpc UpdateAlert(UpdateAlertRequest) returns (UpdateAlertResponse);
+  rpc DeleteAlert(DeleteAlertRequest) returns (DeleteAlertResponse);
+  
+  // ダッシュボード関連
+  rpc GetDashboards(GetDashboardsRequest) returns (GetDashboardsResponse);
+  rpc GetDashboard(GetDashboardRequest) returns (GetDashboardResponse);
+  rpc CreateDashboard(CreateDashboardRequest) returns (CreateDashboardResponse);
+  rpc UpdateDashboard(UpdateDashboardRequest) returns (UpdateDashboardResponse);
+  rpc DeleteDashboard(DeleteDashboardRequest) returns (DeleteDashboardResponse);
+  
+  // ヘルスチェック
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// メトリクス取得リクエスト
+message GetMetricsRequest {
+  string service = 1;
+  string namespace = 2;
+  map<string, string> labels = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+  int32 limit = 6;
+  int32 offset = 7;
+}
+
+// メトリクス取得レスポンス
+message GetMetricsResponse {
+  repeated Metric metrics = 1;
+  Pagination pagination = 2;
+}
+
+// 単一メトリクス取得リクエスト
+message GetMetricRequest {
+  string name = 1;
+  map<string, string> labels = 2;
+}
+
+// 単一メトリクス取得レスポンス
+message GetMetricResponse {
+  Metric metric = 1;
+}
+
+// 時系列データ取得リクエスト
+message GetTimeSeriesRequest {
+  string metric_name = 1;
+  map<string, string> labels = 2;
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
+  google.protobuf.Duration interval = 5;
+  string aggregation = 6;
+}
+
+// 時系列データ取得レスポンス
+message GetTimeSeriesResponse {
+  TimeSeries time_series = 1;
+}
+
+// ログ取得リクエスト
+message GetLogsRequest {
+  string service = 1;
+  LogLevel level = 2;
+  map<string, string> labels = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+  int32 limit = 6;
+  int32 offset = 7;
+}
+
+// ログ取得レスポンス
+message GetLogsResponse {
+  repeated Log logs = 1;
+  Pagination pagination = 2;
+}
+
+// ログ検索リクエスト
+message SearchLogsRequest {
+  string query = 1;
+  string service = 2;
+  LogLevel level = 3;
+  map<string, string> labels = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
+  int32 limit = 7;
+  int32 offset = 8;
+}
+
+// ログ検索レスポンス
+message SearchLogsResponse {
+  repeated Log logs = 1;
+  Pagination pagination = 2;
+  repeated LogFacet facets = 3;
+}
+
+// ログファセット
+message LogFacet {
+  string field = 1;
+  repeated LogFacetValue values = 2;
+}
+
+// ログファセット値
+message LogFacetValue {
+  string value = 1;
+  int64 count = 2;
+}
+
+// トレース取得リクエスト
+message GetTracesRequest {
+  string service = 1;
+  string operation = 2;
+  map<string, string> labels = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+  int32 limit = 6;
+  int32 offset = 7;
+}
+
+// トレース取得レスポンス
+message GetTracesResponse {
+  repeated Trace traces = 1;
+  Pagination pagination = 2;
+}
+
+// トレース
+message Trace {
+  string trace_id = 1;
+  string service = 2;
+  string operation = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+  google.protobuf.Duration duration = 6;
+  uint32 span_count = 7;
+  map<string, string> labels = 8;
+}
+
+// 単一トレース取得リクエスト
+message GetTraceRequest {
+  string trace_id = 1;
+}
+
+// 単一トレース取得レスポンス
+message GetTraceResponse {
+  repeated Span spans = 1;
+  Trace trace = 2;
+}
+
+// トレースグラフ取得リクエスト
+message GetTraceGraphRequest {
+  string trace_id = 1;
+}
+
+// トレースグラフ取得レスポンス
+message GetTraceGraphResponse {
+  repeated TraceNode nodes = 1;
+  repeated TraceEdge edges = 2;
+}
+
+// トレースノード
+message TraceNode {
+  string span_id = 1;
+  string name = 2;
+  string service = 3;
+  SpanKind kind = 4;
+  google.protobuf.Duration duration = 5;
+  map<string, string> attributes = 6;
+}
+
+// トレースエッジ
+message TraceEdge {
+  string from_span_id = 1;
+  string to_span_id = 2;
+  map<string, string> attributes = 3;
+}
+
+// 異常検知取得リクエスト
+message GetAnomaliesRequest {
+  string metric_name = 1;
+  AnomalyType type = 2;
+  AlertSeverity severity = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+  int32 limit = 6;
+  int32 offset = 7;
+}
+
+// 異常検知取得レスポンス
+message GetAnomaliesResponse {
+  repeated Anomaly anomalies = 1;
+  Pagination pagination = 2;
+}
+
+// 単一異常検知取得リクエスト
+message GetAnomalyRequest {
+  string id = 1;
+}
+
+// 単一異常検知取得レスポンス
+message GetAnomalyResponse {
+  Anomaly anomaly = 1;
+}
+
+// アラート取得リクエスト
+message GetAlertsRequest {
+  AlertSeverity severity = 1;
+  string status = 2;
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
+  int32 limit = 5;
+  int32 offset = 6;
+}
+
+// アラート取得レスポンス
+message GetAlertsResponse {
+  repeated Alert alerts = 1;
+  Pagination pagination = 2;
+}
+
+// 単一アラート取得リクエスト
+message GetAlertRequest {
+  string id = 1;
+}
+
+// 単一アラート取得レスポンス
+message GetAlertResponse {
+  Alert alert = 1;
+}
+
+// アラート作成リクエスト
+message CreateAlertRequest {
+  string name = 1;
+  string description = 2;
+  AlertSeverity severity = 3;
+  map<string, string> labels = 4;
+  repeated string notifications = 5;
+}
+
+// アラート作成レスポンス
+message CreateAlertResponse {
+  Alert alert = 1;
+}
+
+// アラート更新リクエスト
+message UpdateAlertRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  AlertSeverity severity = 4;
+  string status = 5;
+  map<string, string> labels = 6;
+  repeated string notifications = 7;
+}
+
+// アラート更新レスポンス
+message UpdateAlertResponse {
+  Alert alert = 1;
+}
+
+// アラート削除リクエスト
+message DeleteAlertRequest {
+  string id = 1;
+}
+
+// アラート削除レスポンス
+message DeleteAlertResponse {
+  bool success = 1;
+}
+
+// ダッシュボード
+message Dashboard {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated DashboardPanel panels = 4;
+  map<string, string> labels = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// ダッシュボードパネル
+message DashboardPanel {
+  string id = 1;
+  string title = 2;
+  string type = 3;
+  map<string, string> config = 4;
+  repeated DashboardQuery queries = 5;
+}
+
+// ダッシュボードクエリ
+message DashboardQuery {
+  string id = 1;
+  string query = 2;
+  string data_source = 3;
+  map<string, string> options = 4;
+}
+
+// ダッシュボード取得リクエスト
+message GetDashboardsRequest {
+  map<string, string> labels = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+// ダッシュボード取得レスポンス
+message GetDashboardsResponse {
+  repeated Dashboard dashboards = 1;
+  Pagination pagination = 2;
+}
+
+// 単一ダッシュボード取得リクエスト
+message GetDashboardRequest {
+  string id = 1;
+}
+
+// 単一ダッシュボード取得レスポンス
+message GetDashboardResponse {
+  Dashboard dashboard = 1;
+}
+
+// ダッシュボード作成リクエスト
+message CreateDashboardRequest {
+  string name = 1;
+  string description = 2;
+  repeated DashboardPanel panels = 3;
+  map<string, string> labels = 4;
+}
+
+// ダッシュボード作成レスポンス
+message CreateDashboardResponse {
+  Dashboard dashboard = 1;
+}
+
+// ダッシュボード更新リクエスト
+message UpdateDashboardRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated DashboardPanel panels = 4;
+  map<string, string> labels = 5;
+}
+
+// ダッシュボード更新レスポンス
+message UpdateDashboardResponse {
+  Dashboard dashboard = 1;
+}
+
+// ダッシュボード削除リクエスト
+message DeleteDashboardRequest {
+  string id = 1;
+}
+
+// ダッシュボード削除レスポンス
+message DeleteDashboardResponse {
+  bool success = 1;
+}
+
+// ヘルスチェックリクエスト
+message HealthCheckRequest {
+  string service = 1;
+}
+
+// ヘルスチェックレスポンス
+message HealthCheckResponse {
+  HealthCheck health_check = 1;
+} 

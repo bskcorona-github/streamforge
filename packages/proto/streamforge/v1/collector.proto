@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package streamforge.v1;
+
+option go_package = "github.com/bskcorona-github/streamforge/packages/proto/streamforge/v1;v1";
+option java_multiple_files = true;
+option java_package = "com.streamforge.v1";
+option java_outer_classname = "CollectorProto";
+option csharp_namespace = "StreamForge.V1";
+option objc_class_prefix = "SF";
+option php_namespace = "StreamForge\\V1";
+option ruby_package = "StreamForge::V1";
+
+import "google/protobuf/timestamp.proto";
+import "streamforge/v1/common.proto";
+
+// データ収集サービス
+service CollectorService {
+  // メトリクスを送信
+  rpc SendMetrics(SendMetricsRequest) returns (SendMetricsResponse);
+  
+  // ログを送信
+  rpc SendLogs(SendLogsRequest) returns (SendLogsResponse);
+  
+  // トレースを送信
+  rpc SendTraces(SendTracesRequest) returns (SendTracesResponse);
+  
+  // バッチでデータを送信
+  rpc SendBatch(SendBatchRequest) returns (SendBatchResponse);
+  
+  // ヘルスチェック
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// メトリクス送信リクエスト
+message SendMetricsRequest {
+  repeated Metric metrics = 1;
+  Resource resource = 2;
+  map<string, string> metadata = 3;
+}
+
+// メトリクス送信レスポンス
+message SendMetricsResponse {
+  string batch_id = 1;
+  int32 accepted_count = 2;
+  int32 rejected_count = 3;
+  repeated string errors = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+// ログ送信リクエスト
+message SendLogsRequest {
+  repeated Log logs = 1;
+  Resource resource = 2;
+  map<string, string> metadata = 3;
+}
+
+// ログ送信レスポンス
+message SendLogsResponse {
+  string batch_id = 1;
+  int32 accepted_count = 2;
+  int32 rejected_count = 3;
+  repeated string errors = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+// トレース送信リクエスト
+message SendTracesRequest {
+  repeated Span spans = 1;
+  Resource resource = 2;
+  map<string, string> metadata = 3;
+}
+
+// トレース送信レスポンス
+message SendTracesResponse {
+  string batch_id = 1;
+  int32 accepted_count = 2;
+  int32 rejected_count = 3;
+  repeated string errors = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+// バッチ送信リクエスト
+message SendBatchRequest {
+  repeated Metric metrics = 1;
+  repeated Log logs = 2;
+  repeated Span spans = 3;
+  Resource resource = 4;
+  map<string, string> metadata = 5;
+}
+
+// バッチ送信レスポンス
+message SendBatchResponse {
+  string batch_id = 1;
+  BatchResult metrics_result = 2;
+  BatchResult logs_result = 3;
+  BatchResult traces_result = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+// バッチ結果
+message BatchResult {
+  int32 accepted_count = 1;
+  int32 rejected_count = 2;
+  repeated string errors = 3;
+}
+
+// ヘルスチェックリクエスト
+message HealthCheckRequest {
+  string service = 1;
+}
+
+// ヘルスチェックレスポンス
+message HealthCheckResponse {
+  HealthCheck health_check = 1;
+} 
