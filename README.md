@@ -1,8 +1,8 @@
 # 🔥 StreamForge
 
-[![CI](https://github.com/streamforge/streamforge/workflows/CI/badge.svg)](https://github.com/streamforge/streamforge/actions)
-[![codecov](https://codecov.io/gh/streamforge/streamforge/branch/main/graph/badge.svg)](https://codecov.io/gh/streamforge/streamforge)
-[![Security](https://github.com/streamforge/streamforge/workflows/Security/badge.svg)](https://github.com/streamforge/streamforge/actions)
+[![CI](https://github.com/bskcorona-github/streamforge/workflows/CI/badge.svg)](https://github.com/bskcorona-github/streamforge/actions)
+[![codecov](https://codecov.io/gh/bskcorona-github/streamforge/branch/main/graph/badge.svg)](https://codecov.io/gh/bskcorona-github/streamforge)
+[![Security](https://github.com/bskcorona-github/streamforge/workflows/Security/badge.svg)](https://github.com/bskcorona-github/streamforge/actions)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/streamforge/streamforge/badge)](https://securityscorecards.dev/viewer/?uri=github.com/streamforge/streamforge)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)

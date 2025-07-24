@@ -5,13 +5,13 @@
   "description": "Real-time distributed system observability platform with AI-driven anomaly detection",
   "author": "StreamForge Team",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/your-org/streamforge",
+  "homepage": "https://github.com/bskcorona-github/streamforge",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/streamforge.git"
+    "url": "https://github.com/bskcorona-github/streamforge.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/streamforge/issues"
+    "url": "https://github.com/bskcorona-github/streamforge/issues"
   },
   "keywords": [
     "observability",
