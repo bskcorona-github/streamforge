@@ -1,0 +1,165 @@
+graph TB
+    %% External Users and Data Sources
+    subgraph "External Layer"
+        A[End Users]
+        B[Applications]
+        C[Infrastructure]
+        D[Third-party Services]
+    end
+    
+    %% Data Collection Layer
+    subgraph "Data Collection Layer"
+        E[Collector Agent<br/>Go]
+        F[OpenTelemetry<br/>SDK Integration]
+        G[Log Shippers<br/>Fluentd/Vector]
+    end
+    
+    %% Message Streaming Layer
+    subgraph "Event Streaming"
+        H[Kafka/Pulsar<br/>Event Bus]
+        I[Schema Registry<br/>Protobuf/Avro]
+    end
+    
+    %% Processing Layer
+    subgraph "Stream Processing"
+        J[Stream Processor<br/>Rust + Tokio]
+        K[ML Engine<br/>Python + MLflow]
+        L[Anomaly Detection<br/>AI Models]
+    end
+    
+    %% API Gateway Layer
+    subgraph "API Layer"
+        M[API Gateway<br/>Go + Gin]
+        N[GraphQL API<br/>gqlgen]
+        O[REST API<br/>OpenAPI 3.0]
+        P[gRPC API<br/>Protobuf]
+    end
+    
+    %% Data Storage Layer
+    subgraph "Data Storage"
+        Q[ClickHouse<br/>Time-series DB]
+        R[PostgreSQL<br/>Metadata Store]
+        S[Redis<br/>Cache & Session]
+        T[Object Storage<br/>MinIO/S3]
+    end
+    
+    %% Frontend Layer
+    subgraph "Frontend"
+        U[Dashboard UI<br/>Next.js 14 + RSC]
+        V[Admin Panel<br/>React + TypeScript]
+        W[Mobile App<br/>React Native]
+    end
+    
+    %% Kubernetes Orchestration
+    subgraph "Kubernetes Platform"
+        X[K8s Operator<br/>Go + controller-runtime]
+        Y[Helm Charts<br/>Package Management]
+        Z[ArgoCD<br/>GitOps Deployment]
+    end
+    
+    %% Observability Stack
+    subgraph "Observability"
+        AA[Prometheus<br/>Metrics]
+        BB[Jaeger<br/>Distributed Tracing]
+        CC[Grafana<br/>Visualization]
+        DD[Loki<br/>Log Aggregation]
+        EE[AlertManager<br/>Alerting]
+    end
+    
+    %% Security & Supply Chain
+    subgraph "Security Layer"
+        FF[SLSA Framework<br/>Supply Chain Security]
+        GG[Cosign/Sigstore<br/>Artifact Signing]
+        HH[SBOM Generation<br/>Syft + Grype]
+        II[Security Scanning<br/>Trivy + Semgrep]
+    end
+    
+    %% Data Flow Connections
+    A --> E
+    B --> F
+    C --> G
+    D --> F
+    
+    E --> H
+    F --> H
+    G --> H
+    
+    H --> J
+    H --> K
+    J --> L
+    K --> L
+    
+    J --> Q
+    K --> Q
+    L --> Q
+    J --> R
+    K --> R
+    
+    M --> N
+    M --> O
+    M --> P
+    N --> Q
+    O --> Q
+    P --> Q
+    N --> R
+    O --> R
+    P --> R
+    
+    M --> S
+    N --> S
+    O --> S
+    
+    U --> M
+    V --> M
+    W --> M
+    
+    X --> Y
+    Y --> Z
+    X --> Q
+    X --> R
+    X --> S
+    
+    %% Observability connections
+    E --> AA
+    J --> AA
+    K --> AA
+    M --> AA
+    U --> AA
+    
+    E --> BB
+    J --> BB
+    K --> BB
+    M --> BB
+    
+    E --> DD
+    J --> DD
+    K --> DD
+    M --> DD
+    U --> DD
+    
+    AA --> CC
+    BB --> CC
+    DD --> CC
+    
+    AA --> EE
+    CC --> EE
+    
+    %% Security connections
+    FF --> GG
+    FF --> HH
+    FF --> II
+    
+    %% Styling
+    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef data fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px,color:#000
+    classDef infra fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef security fill:#ffebee,stroke:#b71c1c,stroke-width:2px,color:#000
+    classDef observability fill:#f1f8e9,stroke:#33691e,stroke-width:2px,color:#000
+    
+    class U,V,W frontend
+    class E,F,G,J,K,L,M,N,O,P backend
+    class Q,R,S,T data
+    class X,Y,Z,H,I infra
+    class FF,GG,HH,II security
+    class AA,BB,CC,DD,EE observability 

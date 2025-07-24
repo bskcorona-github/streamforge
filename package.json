@@ -1,0 +1,119 @@
+{
+  "name": "streamforge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Real-time distributed system observability platform with AI-driven anomaly detection",
+  "author": "StreamForge Team",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/your-org/streamforge",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/streamforge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/streamforge/issues"
+  },
+  "keywords": [
+    "observability",
+    "monitoring",
+    "real-time",
+    "streaming",
+    "anomaly-detection",
+    "kubernetes",
+    "opentelemetry",
+    "devops",
+    "sre"
+  ],
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "examples/*",
+    "docs/website"
+  ],
+  "packageManager": "npm@10.2.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "test:coverage": "turbo run test:coverage",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean",
+    "proto:generate": "turbo run proto:generate",
+    "docs:build": "turbo run docs:build",
+    "docs:dev": "turbo run docs:dev",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "release": "turbo run build && changeset publish",
+    "dev:setup": "npm install && npm run proto:generate && npm run build",
+    "dev:dashboard": "turbo run dev --filter=dashboard",
+    "dev:api": "turbo run dev --filter=api-gateway",
+    "dev:all": "turbo run dev --parallel",
+    "ci:build": "turbo run build test lint typecheck",
+    "ci:test": "turbo run test:coverage",
+    "security:audit": "npm audit --audit-level=high",
+    "security:fix": "npm audit fix",
+    "deps:update": "npm update && npx npm-check-updates -u",
+    "deps:check": "npx npm-check-updates",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.4.8",
+    "@changesets/cli": "^2.26.2",
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@turbo/gen": "^1.10.16",
+    "eslint": "^8.54.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.1.0",
+    "prettier": "^3.1.0",
+    "turbo": "^1.10.16",
+    "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "@types/node": "^20.9.0"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "commitlint": {
+    "extends": ["@commitlint/config-conventional"]
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 80,
+    "tabWidth": 2,
+    "useTabs": false,
+    "endOfLine": "lf"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "eslint:recommended",
+      "@typescript-eslint/recommended"
+    ]
+  },
+  "volta": {
+    "node": "20.9.0",
+    "npm": "10.2.0"
+  }
+} 

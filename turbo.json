@@ -1,0 +1,233 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "**/.env.*local",
+    "packages/proto/**/*.proto",
+    "Makefile",
+    "docker-compose.yml"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "VERCEL_ENV",
+    "DATABASE_URL",
+    "REDIS_URL",
+    "KAFKA_BROKERS",
+    "OTEL_ENDPOINT"
+  ],
+  "pipeline": {
+    "proto:generate": {
+      "cache": false,
+      "inputs": ["packages/proto/**/*.proto"],
+      "outputs": [
+        "packages/*/generated/**",
+        "apps/*/generated/**"
+      ]
+    },
+    "build": {
+      "dependsOn": ["^build", "proto:generate"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.test.*",
+        "!**/*.spec.*",
+        "!**/test/**",
+        "!**/tests/**",
+        "!**/__tests__/**",
+        "!**/coverage/**"
+      ],
+      "outputs": [
+        "dist/**",
+        "build/**",
+        ".next/**",
+        "!.next/cache/**",
+        "target/release/**",
+        "*.tgz"
+      ],
+      "env": [
+        "NODE_ENV",
+        "NEXT_PUBLIC_*"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".eslintrc*",
+        "eslint.config.*",
+        ".golangci.yml",
+        "clippy.toml",
+        "pyproject.toml"
+      ],
+      "outputs": []
+    },
+    "lint:fix": {
+      "dependsOn": ["^lint:fix"],
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".eslintrc*",
+        "eslint.config.*",
+        ".golangci.yml", 
+        "clippy.toml",
+        "pyproject.toml"
+      ],
+      "outputs": []
+    },
+    "format": {
+      "dependsOn": ["^format"],
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".prettierrc*",
+        "prettier.config.*",
+        ".rustfmt.toml",
+        "pyproject.toml"
+      ],
+      "outputs": []
+    },
+    "format:check": {
+      "dependsOn": ["^format:check"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".prettierrc*",
+        "prettier.config.*",
+        ".rustfmt.toml",
+        "pyproject.toml"
+      ],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "tsconfig*.json",
+        "**/*.d.ts"
+      ],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^test", "build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/test/**",
+        "**/tests/**",
+        "**/__tests__/**",
+        "jest.config.*",
+        "vitest.config.*",
+        "playwright.config.*",
+        "cargo.toml",
+        "*_test.go",
+        "conftest.py"
+      ],
+      "outputs": [
+        "coverage/**",
+        "test-results/**",
+        "target/debug/**"
+      ],
+      "env": [
+        "TEST_DATABASE_URL",
+        "TEST_REDIS_URL"
+      ]
+    },
+    "test:unit": {
+      "dependsOn": ["^test:unit"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/unit/**",
+        "jest.config.*",
+        "vitest.config.*",
+        "*_test.go",
+        "conftest.py"
+      ],
+      "outputs": [
+        "coverage/unit/**",
+        "target/debug/**"
+      ]
+    },
+    "test:integration": {
+      "dependsOn": ["^test:integration", "build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/integration/**",
+        "docker-compose.test.yml"
+      ],
+      "outputs": [
+        "coverage/integration/**"
+      ],
+      "env": [
+        "TEST_DATABASE_URL",
+        "TEST_REDIS_URL",
+        "TEST_KAFKA_BROKERS"
+      ]
+    },
+    "test:e2e": {
+      "dependsOn": ["^test:e2e", "build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/e2e/**",
+        "playwright.config.*",
+        "cypress.config.*"
+      ],
+      "outputs": [
+        "test-results/**",
+        "playwright-report/**",
+        "cypress/videos/**",
+        "cypress/screenshots/**"
+      ]
+    },
+    "test:coverage": {
+      "dependsOn": ["test:unit", "test:integration"],
+      "inputs": [
+        "coverage/**"
+      ],
+      "outputs": [
+        "coverage/merged/**"
+      ]
+    },
+    "benchmark": {
+      "dependsOn": ["^benchmark", "build"],
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/benchmark/**",
+        "**/benches/**"
+      ],
+      "outputs": [
+        "benchmark-results/**"
+      ]
+    },
+    "docs:build": {
+      "dependsOn": ["^docs:build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "docs/**",
+        "**/*.md"
+      ],
+      "outputs": [
+        "docs/build/**",
+        "storybook-static/**"
+      ]
+    },
+    "docs:dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false,
+      "inputs": [],
+      "outputs": []
+    }
+  },
+  "remoteCache": {
+    "teamId": "streamforge",
+    "signature": true
+  }
+} 
