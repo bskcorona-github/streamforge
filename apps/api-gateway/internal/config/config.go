@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -18,6 +19,8 @@ type Config struct {
 	RateLimit       RateLimit    `mapstructure:"rate_limit"`
 	Security        Security     `mapstructure:"security"`
 	Logging         Logging      `mapstructure:"logging"`
+	JWTSecret       string       `mapstructure:"jwt_secret"`
+	JWTExpiration   time.Duration `mapstructure:"jwt_expiration"`
 }
 
 // Database はデータベース設定を表します
@@ -125,9 +128,13 @@ func setDefaults() {
 	viper.SetDefault("rate_limit.window", 60)
 
 	// セキュリティ設定
-	viper.SetDefault("security.jwt_secret", "your-secret-key")
+	viper.SetDefault("security.jwt_secret", "your-secret-key-change-in-production")
 	viper.SetDefault("security.allowed_origins", []string{"*"})
 	viper.SetDefault("security.cors_enabled", true)
+
+	// JWT設定
+	viper.SetDefault("jwt_secret", "your-secret-key-change-in-production")
+	viper.SetDefault("jwt_expiration", "24h")
 
 	// ログ設定
 	viper.SetDefault("logging.level", "info")
@@ -137,41 +144,39 @@ func setDefaults() {
 
 // validateConfig は設定の妥当性を検証します
 func validateConfig(config *Config) error {
+	// ポート番号の検証
 	if config.Port <= 0 || config.Port > 65535 {
-		return fmt.Errorf("invalid port: %d", config.Port)
+		return fmt.Errorf("invalid port number: %d", config.Port)
 	}
 
+	// データベース設定の検証
 	if config.Database.Host == "" {
 		return fmt.Errorf("database host is required")
 	}
-
 	if config.Database.Port <= 0 || config.Database.Port > 65535 {
 		return fmt.Errorf("invalid database port: %d", config.Database.Port)
 	}
-
 	if config.Database.User == "" {
 		return fmt.Errorf("database user is required")
 	}
-
 	if config.Database.Name == "" {
 		return fmt.Errorf("database name is required")
 	}
 
+	// Redis設定の検証
 	if config.Redis.Host == "" {
 		return fmt.Errorf("redis host is required")
 	}
-
 	if config.Redis.Port <= 0 || config.Redis.Port > 65535 {
 		return fmt.Errorf("invalid redis port: %d", config.Redis.Port)
 	}
 
-	if config.RateLimit.Enabled {
-		if config.RateLimit.Limit <= 0 {
-			return fmt.Errorf("rate limit must be positive")
-		}
-		if config.RateLimit.Window <= 0 {
-			return fmt.Errorf("rate limit window must be positive")
-		}
+	// JWT設定の検証
+	if config.JWTSecret == "" {
+		return fmt.Errorf("JWT secret is required")
+	}
+	if config.JWTExpiration <= 0 {
+		return fmt.Errorf("JWT expiration must be positive")
 	}
 
 	return nil

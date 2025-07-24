@@ -19,6 +19,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -29,6 +31,25 @@ import (
 	"gorm.io/gorm"
 )
 
+// @title StreamForge API
+// @version 1.0
+// @description StreamForge is a real-time observability platform that provides comprehensive monitoring, alerting, and analytics capabilities for distributed systems.
+// @termsOfService https://github.com/bskcorona-github/streamforge
+// @contact.name StreamForge Team
+// @contact.url https://github.com/bskcorona-github/streamforge
+// @contact.email team@streamforge.dev
+// @license.name Apache 2.0
+// @license.url https://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:8080
+// @BasePath /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT Bearer token
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-Key
+// @description API Key for authentication
 func main() {
 	// 設定の読み込み
 	cfg := config.Load()
@@ -66,6 +87,15 @@ func main() {
 	// ハンドラーの初期化
 	handler := handlers.NewHandler(svc, logger)
 
+	// 認証ミドルウェアの初期化
+	authMiddleware := middleware.NewAuthMiddleware(&middleware.AuthConfig{
+		JWTSecret:     cfg.JWTSecret,
+		JWTExpiration: cfg.JWTExpiration,
+		APIKeyHeader:  "X-API-Key",
+		RedisClient:   redisClient,
+		Logger:        logger,
+	})
+
 	// Ginルーターの設定
 	router := gin.New()
 	router.Use(gin.Recovery())
@@ -73,8 +103,9 @@ func main() {
 	// ミドルウェアの設定
 	router.Use(middleware.Logger(logger))
 	router.Use(middleware.CORS())
-	router.Use(middleware.RateLimit(cfg.RateLimit))
+	router.Use(middleware.RateLimit(cfg.RateLimit.Limit, cfg.RateLimit.Window))
 	router.Use(middleware.Tracing(tracer))
+	router.Use(middleware.RequestID())
 
 	// ヘルスチェックエンドポイント
 	router.GET("/health", func(c *gin.Context) {
@@ -88,8 +119,21 @@ func main() {
 	// Prometheusメトリクスエンドポイント
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// APIルートの設定
+	// Swaggerドキュメントエンドポイント
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// 認証関連エンドポイント（認証不要）
+	auth := router.Group("/api/v1/auth")
+	{
+		auth.POST("/login", handler.Login)
+		auth.POST("/register", handler.Register)
+		auth.POST("/refresh", handler.RefreshToken)
+		auth.POST("/logout", authMiddleware.JWT(), handler.Logout)
+	}
+
+	// APIルートの設定（認証必要）
 	api := router.Group("/api/v1")
+	api.Use(authMiddleware.JWT()) // JWT認証を適用
 	{
 		// メトリクス関連
 		metrics := api.Group("/metrics")
@@ -97,6 +141,9 @@ func main() {
 			metrics.GET("", handler.GetMetrics)
 			metrics.GET("/:name", handler.GetMetric)
 			metrics.GET("/:name/timeseries", handler.GetTimeSeries)
+			metrics.POST("", authMiddleware.RequireRole("admin", "write"), handler.CreateMetric)
+			metrics.PUT("/:name", authMiddleware.RequireRole("admin", "write"), handler.UpdateMetric)
+			metrics.DELETE("/:name", authMiddleware.RequireRole("admin"), handler.DeleteMetric)
 		}
 
 		// ログ関連
@@ -119,9 +166,9 @@ func main() {
 		{
 			alerts.GET("", handler.GetAlerts)
 			alerts.GET("/:id", handler.GetAlert)
-			alerts.POST("", handler.CreateAlert)
-			alerts.PUT("/:id", handler.UpdateAlert)
-			alerts.DELETE("/:id", handler.DeleteAlert)
+			alerts.POST("", authMiddleware.RequireRole("admin", "write"), handler.CreateAlert)
+			alerts.PUT("/:id", authMiddleware.RequireRole("admin", "write"), handler.UpdateAlert)
+			alerts.DELETE("/:id", authMiddleware.RequireRole("admin"), handler.DeleteAlert)
 		}
 
 		// ダッシュボード関連
@@ -129,9 +176,28 @@ func main() {
 		{
 			dashboards.GET("", handler.GetDashboards)
 			dashboards.GET("/:id", handler.GetDashboard)
-			dashboards.POST("", handler.CreateDashboard)
-			dashboards.PUT("/:id", handler.UpdateDashboard)
-			dashboards.DELETE("/:id", handler.DeleteDashboard)
+			dashboards.POST("", authMiddleware.RequireRole("admin", "write"), handler.CreateDashboard)
+			dashboards.PUT("/:id", authMiddleware.RequireRole("admin", "write"), handler.UpdateDashboard)
+			dashboards.DELETE("/:id", authMiddleware.RequireRole("admin"), handler.DeleteDashboard)
+		}
+
+		// ユーザー管理（管理者のみ）
+		users := api.Group("/users")
+		users.Use(authMiddleware.RequireRole("admin"))
+		{
+			users.GET("", handler.GetUsers)
+			users.GET("/:id", handler.GetUser)
+			users.POST("", handler.CreateUser)
+			users.PUT("/:id", handler.UpdateUser)
+			users.DELETE("/:id", handler.DeleteUser)
+		}
+
+		// APIキー管理
+		apikeys := api.Group("/apikeys")
+		{
+			apikeys.GET("", handler.GetAPIKeys)
+			apikeys.POST("", authMiddleware.RequireRole("admin", "write"), handler.CreateAPIKey)
+			apikeys.DELETE("/:id", authMiddleware.RequireRole("admin", "write"), handler.DeleteAPIKey)
 		}
 	}
 
