@@ -1,0 +1,12 @@
+operator:
+  reconcile_period: "30s"
+  max_concurrent: 1
+  leader_election: false
+
+kubernetes:
+  namespace: ""
+  watch_all: false
+
+logging:
+  level: "info"
+  format: "json" 

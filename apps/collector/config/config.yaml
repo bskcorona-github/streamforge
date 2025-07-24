@@ -1,0 +1,19 @@
+api:
+  endpoint: "http://localhost:8080"
+  timeout: "30s"
+  retries: 3
+
+collection:
+  interval: "1m"
+  batch_size: 100
+  max_workers: 4
+  buffer_size: 1000
+
+telemetry:
+  endpoint: "http://localhost:4317"
+  enabled: true
+  sample_rate: 1.0
+
+logging:
+  level: "info"
+  format: "json" 
