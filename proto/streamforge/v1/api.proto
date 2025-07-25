@@ -1,0 +1,294 @@
+syntax = "proto3";
+
+package streamforge.v1;
+
+option go_package = "github.com/streamforge/streamforge/proto/streamforge/v1;streamforgev1";
+option java_multiple_files = true;
+option java_outer_classname = "ApiProto";
+option java_package = "com.streamforge.v1";
+
+import "google/protobuf/timestamp.proto";
+import "streamforge/v1/common.proto";
+
+// メトリクスサービス
+service MetricsService {
+  // メトリクスを送信
+  rpc SendMetrics(SendMetricsRequest) returns (SendMetricsResponse);
+  
+  // メトリクスを取得
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  
+  // 時系列データを取得
+  rpc GetTimeSeries(GetTimeSeriesRequest) returns (GetTimeSeriesResponse);
+  
+  // メトリクスをストリーミング
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream Metric);
+}
+
+// ログサービス
+service LogsService {
+  // ログを送信
+  rpc SendLogs(SendLogsRequest) returns (SendLogsResponse);
+  
+  // ログを取得
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse);
+  
+  // ログをストリーミング
+  rpc StreamLogs(StreamLogsRequest) returns (stream LogEntry);
+}
+
+// トレースサービス
+service TraceService {
+  // トレースを送信
+  rpc SendTrace(SendTraceRequest) returns (SendTraceResponse);
+  
+  // トレースを取得
+  rpc GetTrace(GetTraceRequest) returns (GetTraceResponse);
+  
+  // トレースをストリーミング
+  rpc StreamTraces(StreamTracesRequest) returns (stream Span);
+}
+
+// アラートサービス
+service AlertService {
+  // アラートを作成
+  rpc CreateAlert(CreateAlertRequest) returns (CreateAlertResponse);
+  
+  // アラートを取得
+  rpc GetAlert(GetAlertRequest) returns (GetAlertResponse);
+  
+  // アラート一覧を取得
+  rpc ListAlerts(ListAlertsRequest) returns (ListAlertsResponse);
+  
+  // アラートを更新
+  rpc UpdateAlert(UpdateAlertRequest) returns (UpdateAlertResponse);
+  
+  // アラートを削除
+  rpc DeleteAlert(DeleteAlertRequest) returns (DeleteAlertResponse);
+  
+  // アラートをストリーミング
+  rpc StreamAlerts(StreamAlertsRequest) returns (stream Alert);
+}
+
+// サービス管理
+service ServiceRegistry {
+  // サービスを登録
+  rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse);
+  
+  // サービス一覧を取得
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+  
+  // サービスを更新
+  rpc UpdateService(UpdateServiceRequest) returns (UpdateServiceResponse);
+  
+  // サービスを削除
+  rpc UnregisterService(UnregisterServiceRequest) returns (UnregisterServiceResponse);
+  
+  // ハートビート
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+// メトリクス関連のリクエスト/レスポンス
+message SendMetricsRequest {
+  repeated Metric metrics = 1;
+  string service_name = 2;
+}
+
+message SendMetricsResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetMetricsRequest {
+  string service_name = 1;
+  string metric_name = 2;
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
+  map<string, string> filters = 5;
+  int32 limit = 6;
+}
+
+message GetMetricsResponse {
+  repeated Metric metrics = 1;
+  int32 total_count = 2;
+}
+
+message GetTimeSeriesRequest {
+  string metric_name = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
+  string interval = 4; // 例: "1m", "5m", "1h"
+  map<string, string> filters = 5;
+}
+
+message GetTimeSeriesResponse {
+  repeated TimeSeries time_series = 1;
+}
+
+message StreamMetricsRequest {
+  string service_name = 1;
+  repeated string metric_names = 2;
+  map<string, string> filters = 3;
+}
+
+// ログ関連のリクエスト/レスポンス
+message SendLogsRequest {
+  repeated LogEntry logs = 1;
+  string service_name = 2;
+}
+
+message SendLogsResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetLogsRequest {
+  string service_name = 1;
+  string level = 2;
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
+  string query = 5;
+  int32 limit = 6;
+  int32 offset = 7;
+}
+
+message GetLogsResponse {
+  repeated LogEntry logs = 1;
+  int32 total_count = 2;
+}
+
+message StreamLogsRequest {
+  string service_name = 1;
+  string level = 2;
+  string query = 3;
+}
+
+// トレース関連のリクエスト/レスポンス
+message SendTraceRequest {
+  repeated Span spans = 1;
+  string service_name = 2;
+}
+
+message SendTraceResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetTraceRequest {
+  string trace_id = 1;
+  string service_name = 2;
+}
+
+message GetTraceResponse {
+  repeated Span spans = 1;
+}
+
+message StreamTracesRequest {
+  string service_name = 1;
+  map<string, string> filters = 2;
+}
+
+// アラート関連のリクエスト/レスポンス
+message CreateAlertRequest {
+  Alert alert = 1;
+}
+
+message CreateAlertResponse {
+  Alert alert = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message GetAlertRequest {
+  string alert_id = 1;
+}
+
+message GetAlertResponse {
+  Alert alert = 1;
+}
+
+message ListAlertsRequest {
+  AlertSeverity severity = 1;
+  AlertStatus status = 2;
+  string service_name = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+message ListAlertsResponse {
+  repeated Alert alerts = 1;
+  int32 total_count = 2;
+}
+
+message UpdateAlertRequest {
+  Alert alert = 1;
+}
+
+message UpdateAlertResponse {
+  Alert alert = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message DeleteAlertRequest {
+  string alert_id = 1;
+}
+
+message DeleteAlertResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message StreamAlertsRequest {
+  AlertSeverity severity = 1;
+  string service_name = 2;
+}
+
+// サービス管理関連のリクエスト/レスポンス
+message RegisterServiceRequest {
+  Service service = 1;
+}
+
+message RegisterServiceResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListServicesRequest {
+  string environment = 1;
+  ServiceStatus status = 2;
+}
+
+message ListServicesResponse {
+  repeated Service services = 1;
+  int32 total_count = 2;
+}
+
+message UpdateServiceRequest {
+  Service service = 1;
+}
+
+message UpdateServiceResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UnregisterServiceRequest {
+  string service_name = 1;
+}
+
+message UnregisterServiceResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HeartbeatRequest {
+  string service_name = 1;
+  ServiceStatus status = 2;
+  map<string, string> metadata = 3;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+  string message = 2;
+} 

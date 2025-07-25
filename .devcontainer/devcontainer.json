@@ -1,0 +1,119 @@
+{
+  "name": "StreamForge Development Environment",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Go
+        "golang.go",
+        "ms-vscode.go",
+        
+        // Rust
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        
+        // Python
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.isort",
+        
+        // TypeScript/JavaScript
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        
+        // Docker
+        "ms-azuretools.vscode-docker",
+        
+        // Kubernetes
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        
+        // Git
+        "eamodio.gitlens",
+        
+        // General
+        "ms-vscode.vscode-json",
+        "yzhang.markdown-all-in-one",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "go.useLanguageServer": true,
+        "go.gopath": "/go",
+        "go.toolsManagement.checkForUpdates": "local",
+        "go.goroot": "/usr/local/go",
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "python.sortImports.args": ["--profile", "black"],
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "files.exclude": {
+          "**/node_modules": true,
+          "**/target": true,
+          "**/__pycache__": true,
+          "**/.pytest_cache": true
+        }
+      }
+    }
+  },
+  
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.22"
+    },
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "stable"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  
+  "forwardPorts": [
+    3000,  // Dashboard
+    8080,  // API Gateway
+    8081,  // Collector
+    8082,  // Stream Processor
+    8083,  // ML Engine
+    8084,  // Operator
+    9090,  // Prometheus
+    3001   // Grafana
+  ],
+  
+  "portsAttributes": {
+    "3000": {
+      "label": "Dashboard",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "API Gateway",
+      "onAutoForward": "notify"
+    },
+    "9090": {
+      "label": "Prometheus",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "Grafana",
+      "onAutoForward": "notify"
+    }
+  },
+  
+  "postCreateCommand": "make setup-dev",
+  "postStartCommand": "make start-dev",
+  
+  "remoteUser": "vscode"
+} 

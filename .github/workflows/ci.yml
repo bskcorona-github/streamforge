@@ -1,0 +1,274 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # 依存関係のキャッシュとセットアップ
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate cache key
+        id: cache-key
+        run: echo "value=${{ github.sha }}-${{ github.run_id }}" >> $GITHUB_OUTPUT
+
+  # TypeScript/Node.js アプリケーションのテスト
+  test-node:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run type checking
+        run: npm run type-check
+      
+      - name: Run tests
+        run: npm run test
+      
+      - name: Run build
+        run: npm run build
+
+  # Go サービスのテスト
+  test-go:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.21, 1.22]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+      
+      - name: Test API Gateway
+        working-directory: services/api-gateway
+        run: |
+          go mod download
+          go test -v ./...
+      
+      - name: Test Collector
+        working-directory: services/collector
+        run: |
+          go mod download
+          go test -v ./...
+      
+      - name: Test Operator
+        working-directory: services/operator
+        run: |
+          go mod download
+          go test -v ./...
+
+  # Rust サービスのテスト
+  test-rust:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/stream-processor/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      
+      - name: Test Stream Processor
+        working-directory: services/stream-processor
+        run: |
+          cargo test --verbose
+          cargo clippy -- -D warnings
+
+  # Python サービスのテスト
+  test-python:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        working-directory: services/ml-engine
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Run linting
+        working-directory: services/ml-engine
+        run: |
+          flake8 .
+          black --check .
+          isort --check-only .
+      
+      - name: Run tests
+        working-directory: services/ml-engine
+        run: |
+          pytest --cov=. --cov-report=xml
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: services/ml-engine/coverage.xml
+
+  # セキュリティスキャン
+  security:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Docker イメージのビルドとプッシュ
+  build-and-push:
+    needs: [test-node, test-go, test-rust, test-python, security]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push API Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/api-gateway
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api-gateway:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push Collector
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/collector
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/collector:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push Stream Processor
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/stream-processor
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/stream-processor:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push ML Engine
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/ml-engine
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ml-engine:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push Operator
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/operator
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/operator:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # デプロイメント（本番環境）
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+      
+      - name: Deploy to Kubernetes
+        run: |
+          export KUBECONFIG=kubeconfig.yaml
+          kubectl apply -f infrastructure/kubernetes/
+          kubectl set image deployment/api-gateway api-gateway=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api-gateway:${{ github.sha }}
+          kubectl set image deployment/collector collector=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/collector:${{ github.sha }}
+          kubectl set image deployment/stream-processor stream-processor=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/stream-processor:${{ github.sha }}
+          kubectl set image deployment/ml-engine ml-engine=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ml-engine:${{ github.sha }}
+          kubectl set image deployment/operator operator=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/operator:${{ github.sha }} 

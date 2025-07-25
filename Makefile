@@ -69,22 +69,35 @@ help: ## Show this help message
 # 🔧 Development Environment
 # =============================================================================
 
-.PHONY: dev-setup
-dev-setup: ## Setup development environment
+.PHONY: setup-dev
+setup-dev: ## Setup development environment (Phase 2)
 	$(call log,"Setting up development environment...")
+	@mkdir -p $(SCRIPTS_DIR)
 	@$(SCRIPTS_DIR)/setup-dev.sh
 	$(call log_success,"Development environment ready!")
 
-.PHONY: dev-up
-dev-up: ## Start all development services
+.PHONY: start-dev
+start-dev: ## Start all development services (Phase 2)
 	$(call log,"Starting development services...")
 	docker-compose -f docker-compose.dev.yml up -d
 	$(call log_success,"Development services started!")
 	@echo "$(BOLD)🌐 Services:$(RESET)"
 	@echo "  Dashboard:     http://localhost:3000"
 	@echo "  API Gateway:   http://localhost:8080"
+	@echo "  Collector:     http://localhost:8081"
+	@echo "  Stream Proc:   http://localhost:8082"
+	@echo "  ML Engine:     http://localhost:8083"
+	@echo "  Operator:      http://localhost:8084"
+	@echo "  Prometheus:    http://localhost:9090"
 	@echo "  Grafana:       http://localhost:3001"
-	@echo "  Jaeger:        http://localhost:16686"
+	@echo "  PostgreSQL:    localhost:5432"
+	@echo "  Redis:         localhost:6379"
+
+.PHONY: dev-setup
+dev-setup: setup-dev ## Setup development environment (alias)
+
+.PHONY: dev-up
+dev-up: start-dev ## Start all development services (alias)
 
 .PHONY: dev-down
 dev-down: ## Stop all development services

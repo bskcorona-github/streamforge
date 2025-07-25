@@ -1,0 +1,40 @@
+apiVersion: v2
+name: streamforge
+description: A Helm chart for StreamForge - Real-time monitoring and analytics for distributed streaming systems
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - monitoring
+  - analytics
+  - streaming
+  - real-time
+home: https://github.com/streamforge/streamforge
+sources:
+  - https://github.com/streamforge/streamforge
+maintainers:
+  - name: StreamForge Team
+    email: team@streamforge.io
+icon: https://raw.githubusercontent.com/streamforge/streamforge/main/docs/assets/logo.png
+
+dependencies:
+  - name: postgresql
+    version: 12.5.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: 17.0.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: prometheus
+    version: 25.0.0
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
+  - name: grafana
+    version: 7.0.0
+    repository: https://grafana.github.io/helm-charts
+    condition: grafana.enabled
+  - name: jaeger
+    version: 0.69.0
+    repository: https://jaegertracing.github.io/helm-charts
+    condition: jaeger.enabled 

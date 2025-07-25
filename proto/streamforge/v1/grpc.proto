@@ -1,0 +1,251 @@
+syntax = "proto3";
+
+package streamforge.v1;
+
+option go_package = "github.com/streamforge/streamforge/proto/streamforge/v1;streamforgev1";
+option java_multiple_files = true;
+option java_outer_classname = "GrpcProto";
+option java_package = "com.streamforge.v1";
+
+import "google/protobuf/timestamp.proto";
+import "streamforge/v1/common.proto";
+
+// StreamForge メインサービス
+service StreamForgeService {
+  // ヘルスチェック
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  
+  // メトリクス関連
+  rpc SendMetrics(SendMetricsRequest) returns (SendMetricsResponse);
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream Metric);
+  
+  // ログ関連
+  rpc SendLogs(SendLogsRequest) returns (SendLogsResponse);
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse);
+  rpc StreamLogs(StreamLogsRequest) returns (stream LogEntry);
+  
+  // トレース関連
+  rpc SendTrace(SendTraceRequest) returns (SendTraceResponse);
+  rpc GetTrace(GetTraceRequest) returns (GetTraceResponse);
+  rpc StreamTraces(StreamTracesRequest) returns (stream Span);
+  
+  // アラート関連
+  rpc CreateAlert(CreateAlertRequest) returns (CreateAlertResponse);
+  rpc GetAlert(GetAlertRequest) returns (GetAlertResponse);
+  rpc ListAlerts(ListAlertsRequest) returns (ListAlertsResponse);
+  rpc UpdateAlert(UpdateAlertRequest) returns (UpdateAlertResponse);
+  rpc DeleteAlert(DeleteAlertRequest) returns (DeleteAlertResponse);
+  rpc StreamAlerts(StreamAlertsRequest) returns (stream Alert);
+  
+  // サービス管理
+  rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse);
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+  rpc UpdateService(UpdateServiceRequest) returns (UpdateServiceResponse);
+  rpc UnregisterService(UnregisterServiceRequest) returns (UnregisterServiceResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+// ストリーム処理サービス
+service StreamProcessorService {
+  // ストリーム処理の開始
+  rpc StartProcessing(StartProcessingRequest) returns (StartProcessingResponse);
+  
+  // ストリーム処理の停止
+  rpc StopProcessing(StopProcessingRequest) returns (StopProcessingResponse);
+  
+  // 処理状態の取得
+  rpc GetProcessingStatus(GetProcessingStatusRequest) returns (GetProcessingStatusResponse);
+  
+  // ストリームデータの送信
+  rpc SendStreamData(stream StreamData) returns (StreamDataResponse);
+  
+  // 処理結果のストリーミング
+  rpc StreamResults(StreamResultsRequest) returns (stream ProcessingResult);
+}
+
+// ML エンジンサービス
+service MLEngineService {
+  // モデルの学習
+  rpc TrainModel(TrainModelRequest) returns (TrainModelResponse);
+  
+  // 予測の実行
+  rpc Predict(PredictRequest) returns (PredictResponse);
+  
+  // 異常検知
+  rpc DetectAnomaly(DetectAnomalyRequest) returns (DetectAnomalyResponse);
+  
+  // モデルの評価
+  rpc EvaluateModel(EvaluateModelRequest) returns (EvaluateModelResponse);
+  
+  // モデルのデプロイ
+  rpc DeployModel(DeployModelRequest) returns (DeployModelResponse);
+  
+  // モデルの一覧取得
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+}
+
+// ヘルスチェック関連
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  bool healthy = 1;
+  string status = 2;
+  map<string, string> details = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+// ストリーム処理関連
+message StartProcessingRequest {
+  string pipeline_id = 1;
+  string config = 2; // JSON設定
+  map<string, string> parameters = 3;
+}
+
+message StartProcessingResponse {
+  bool success = 1;
+  string job_id = 2;
+  string message = 3;
+}
+
+message StopProcessingRequest {
+  string job_id = 1;
+}
+
+message StopProcessingResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetProcessingStatusRequest {
+  string job_id = 1;
+}
+
+message GetProcessingStatusResponse {
+  string status = 1; // "running", "stopped", "error"
+  string job_id = 2;
+  map<string, string> metrics = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp last_update = 5;
+}
+
+message StreamData {
+  string job_id = 1;
+  bytes data = 2;
+  map<string, string> metadata = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message StreamDataResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message StreamResultsRequest {
+  string job_id = 1;
+}
+
+message ProcessingResult {
+  string job_id = 1;
+  bytes result = 2;
+  map<string, string> metadata = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+// ML エンジン関連
+message TrainModelRequest {
+  string model_name = 1;
+  string model_type = 2; // "anomaly_detection", "classification", "regression"
+  bytes training_data = 3;
+  map<string, string> hyperparameters = 4;
+  string config = 5; // JSON設定
+}
+
+message TrainModelResponse {
+  bool success = 1;
+  string model_id = 2;
+  string message = 3;
+  map<string, double> metrics = 4;
+}
+
+message PredictRequest {
+  string model_id = 1;
+  bytes input_data = 2;
+  map<string, string> parameters = 3;
+}
+
+message PredictResponse {
+  bool success = 1;
+  bytes prediction = 2;
+  double confidence = 3;
+  string message = 4;
+}
+
+message DetectAnomalyRequest {
+  string model_id = 1;
+  repeated Metric metrics = 2;
+  map<string, string> parameters = 3;
+}
+
+message DetectAnomalyResponse {
+  bool success = 1;
+  repeated AnomalyResult anomalies = 2;
+  string message = 3;
+}
+
+message AnomalyResult {
+  string metric_name = 1;
+  double score = 2;
+  bool is_anomaly = 3;
+  map<string, string> details = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+message EvaluateModelRequest {
+  string model_id = 1;
+  bytes test_data = 2;
+  map<string, string> metrics = 3;
+}
+
+message EvaluateModelResponse {
+  bool success = 1;
+  map<string, double> results = 2;
+  string message = 3;
+}
+
+message DeployModelRequest {
+  string model_id = 1;
+  string environment = 2;
+  map<string, string> config = 3;
+}
+
+message DeployModelResponse {
+  bool success = 1;
+  string deployment_id = 2;
+  string endpoint = 3;
+  string message = 4;
+}
+
+message ListModelsRequest {
+  string model_type = 1;
+  string status = 2; // "trained", "deployed", "archived"
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListModelsResponse {
+  repeated ModelInfo models = 1;
+  int32 total_count = 2;
+}
+
+message ModelInfo {
+  string model_id = 1;
+  string model_name = 2;
+  string model_type = 3;
+  string status = 4;
+  map<string, double> metrics = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+} 

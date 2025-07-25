@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  # Test database
+  test-postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: streamforge_test
+      POSTGRES_USER: streamforge_test
+      POSTGRES_PASSWORD: streamforge_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - test-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U streamforge_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Test Redis
+  test-redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - test-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Test Prometheus
+  test-prometheus:
+    image: prom/prometheus:v2.48.0
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./test-prometheus.yml:/etc/prometheus/prometheus.yml
+      - test-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=1h'
+      - '--web.enable-lifecycle'
+
+  # Test API Gateway
+  test-api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    environment:
+      - NODE_ENV=test
+      - POSTGRES_HOST=test-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=streamforge_test
+      - POSTGRES_USER=streamforge_test
+      - POSTGRES_PASSWORD=streamforge_test
+      - REDIS_HOST=test-redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=test-secret-key
+    ports:
+      - "8085:8080"
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+
+  # Test Collector
+  test-collector:
+    build:
+      context: .
+      dockerfile: services/collector/Dockerfile
+    environment:
+      - NODE_ENV=test
+      - POSTGRES_HOST=test-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=streamforge_test
+      - POSTGRES_USER=streamforge_test
+      - POSTGRES_PASSWORD=streamforge_test
+    ports:
+      - "8086:8081"
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+
+  # Test Stream Processor
+  test-stream-processor:
+    build:
+      context: .
+      dockerfile: services/stream-processor/Dockerfile
+    environment:
+      - RUST_ENV=test
+      - POSTGRES_HOST=test-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=streamforge_test
+      - POSTGRES_USER=streamforge_test
+      - POSTGRES_PASSWORD=streamforge_test
+    ports:
+      - "8087:8082"
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+
+  # Test ML Engine
+  test-ml-engine:
+    build:
+      context: .
+      dockerfile: services/ml-engine/Dockerfile
+    environment:
+      - PYTHON_ENV=test
+      - POSTGRES_HOST=test-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=streamforge_test
+      - POSTGRES_USER=streamforge_test
+      - POSTGRES_PASSWORD=streamforge_test
+    ports:
+      - "8088:8083"
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+
+  # Test Operator
+  test-operator:
+    build:
+      context: .
+      dockerfile: services/operator/Dockerfile
+    environment:
+      - NODE_ENV=test
+      - POSTGRES_HOST=test-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=streamforge_test
+      - POSTGRES_USER=streamforge_test
+      - POSTGRES_PASSWORD=streamforge_test
+    ports:
+      - "8089:8084"
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+
+volumes:
+  test-postgres-data:
+  test-redis-data:
+  test-prometheus-data: 
